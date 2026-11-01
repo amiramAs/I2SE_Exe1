@@ -101,8 +101,9 @@ flowchart LR
 
 ---
 
-## 4. CLI Demo Execution
+## 4. Execution & Usage
 
+### 4.1 CLI Demo Execution
 The pipeline can be executed directly via the command-line interface without opening the GUI:
 ```bash
 python Ex0.py <file.nrrd> <file.csv> <file.mp4>
@@ -111,15 +112,23 @@ python Ex0.py <file.nrrd> <file.csv> <file.mp4>
 * `<file.csv>`: Path to the trajectory coordinate file (`.csv`).
 * `<file.mp4>`: Path to the output video file rendered directly via FFmpeg.
 
+### 4.2 Desktop GUI Execution
+To launch the interactive GUI viewer with keyboard navigation (`Left` / `Right` arrows):
+```bash
+python main.py
+```
+
 ---
 
 ## 5. Technology Stack
 
 * **Language**: Python 3.10+
 * **Numerical Core**: [NumPy](https://numpy.org/) (High-performance array operations and contiguous memory vectorization)
-* **Volumetric I/O**: Native parsing / [pynrrd](https://github.com/mhe/pynrrd)
-* **GUI Framework**: Tkinter / PyQt
-* **Media Encoding**: [FFmpeg](https://ffmpeg.org/) (Invoked via Python subprocess streaming pipeline)
+* **Volumetric I/O**: [pynrrd](https://github.com/mhe/pynrrd)
+* **Image & Text Rendering**: [Pillow (PIL)](https://python-pillow.org/)
+* **GUI Framework**: Tkinter (Standard library, zero-dependency)
+* **Media Encoding**: [FFmpeg](https://ffmpeg.org/) (Direct in-memory stdin pipe)
+* **Testing Framework**: [pytest](https://pytest.org/)
 
 ---
 
@@ -130,12 +139,27 @@ I2SE_Exe1/
 ├── data/                                    # Sample datasets and volumetric inputs
 │   ├── MRHead_1.nrrd                        # 3D MRI scan of human head
 │   ├── onion.nrrd                           # 3D micro-CT scan of an onion
-│   └── car.nrrd                             # Synthetic 3D vehicle dataset
+│   ├── car.nrrd                             # Synthetic 3D vehicle dataset
+│   └── sample_trajectory.csv                # Lecturer trajectory definitions
 ├── docs/                                    # Technical documentation & specifications
 │   ├── algorithm_explanation.md             # Mathematical algorithm specification & pseudo-code
 │   ├── software_requirements_specification_srs.md  # Formal SRS document
 │   └── testing_strategy.md                  # Black-Box testing strategy & verification plan
-├── README.md                                # Project overview, problem description, & scope
+├── src/                                     # Core application source modules
+│   ├── __init__.py
+│   ├── geometry.py                          # 3D vector calculations and shape validation
+│   ├── reslicer.py                          # Vectorized 2D planar slicing engine (>= 100 FPS)
+│   ├── volume_io.py                         # Contiguous 1D memory ingestion for NRRD volumes
+│   ├── csv_parser.py                        # Trajectory parser with header & error detection
+│   ├── error_renderer.py                    # Fallback black frame generator with Pillow text
+│   ├── video_streamer.py                    # Zero disk I/O FFmpeg stdin video encoder
+│   └── gui.py                               # Tkinter interactive desktop viewer
+├── tests/                                   # Automated test suite (pytest)
+│   ├── test_reslicing_blackbox.py           # 12 specification-based blackbox test cases
+│   └── test_demo_cli.py                     # 5 End-to-End CLI demo verification tests
+├── Ex0.py                                   # Executable CLI demo (python Ex0.py <nrrd> <csv> <mp4>)
+├── main.py                                  # Desktop GUI launcher (python main.py)
+└── README.md                                # Project overview, problem description, & scope
 ```
 
 ---
