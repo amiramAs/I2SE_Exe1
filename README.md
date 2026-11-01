@@ -92,6 +92,7 @@ flowchart LR
 │   ├── NRRD Parser & Contiguous Memory Manager
 │   ├── CSV Geometry Trajectory Parser
 │   └── Plane Reslicing Engine (Isosceles Triangle & Trapezoid Solvers)
+```
 │
 └── Export & Output Layer
     ├── Raw Frame Aggregator
@@ -100,7 +101,19 @@ flowchart LR
 
 ---
 
-## 4. Technology Stack
+## 4. CLI Demo Execution
+
+The pipeline can be executed directly via the command-line interface without opening the GUI:
+```bash
+python Ex0.py <file.nrrd> <file.csv> <file.mp4>
+```
+* `<file.nrrd>`: Path to the 3D volumetric input dataset (`.nrrd`).
+* `<file.csv>`: Path to the trajectory coordinate file (`.csv`).
+* `<file.mp4>`: Path to the output video file rendered directly via FFmpeg.
+
+---
+
+## 5. Technology Stack
 
 * **Language**: Python 3.10+
 * **Numerical Core**: [NumPy](https://numpy.org/) (High-performance array operations and contiguous memory vectorization)
@@ -110,7 +123,7 @@ flowchart LR
 
 ---
 
-## 5. Directory Structure
+## 6. Directory Structure
 
 ```plaintext
 I2SE_Exe1/
@@ -120,13 +133,16 @@ I2SE_Exe1/
 │   └── car.nrrd                             # Synthetic 3D vehicle dataset
 ├── docs/                                    # Technical documentation & specifications
 │   ├── algorithm_explanation.md             # Mathematical algorithm specification & pseudo-code
-│   └── software_requirements_specification_srs.md  # Formal SRS document
+│   ├── software_requirements_specification_srs.md  # Formal SRS document
+│   └── testing_strategy.md                  # Black-Box testing strategy & verification plan
 ├── README.md                                # Project overview, problem description, & scope
 ```
 
 ---
 
-## 6. Specification & Requirements Reference
+## 7. Specification & Requirements Reference
 
 * **Algorithm Specification**: Detailed mathematical formulation, scanline centering logic, exception validation, and pseudo-code can be found in the [Planar Reslicing Algorithm Specification](docs/algorithm_explanation.md).
+* **Testing Strategy**: Equivalence partitioning, boundary value analysis, and black-box verification test cases are detailed in the [Black-Box Testing Strategy](docs/testing_strategy.md).
 * **Software Requirements**: Exhaustive functional criteria, non-functional latency/throughput benchmarks, and architectural design are detailed in the [Software Requirements Specification (SRS)](docs/software_requirements_specification_srs.md).
+
