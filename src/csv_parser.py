@@ -30,7 +30,7 @@ def parse_csv_line(line: str, line_number: int = 0) -> ParsedRecord:
     - Exactly 10 tokens for 3 points, exactly 13 tokens for 4 points.
     """
     raw_stripped = line.strip()
-    if not raw_stripped:
+    if not raw_stripped or raw_stripped.startswith("#"):
         return ParsedRecord(is_skipped=True, raw_line=line, line_number=line_number)
 
     # Split by comma
@@ -66,6 +66,14 @@ def parse_csv_line(line: str, line_number: int = 0) -> ParsedRecord:
         return ParsedRecord(
             is_error=True,
             error_message="ERROR: Malformed CSV line - invalid numerical coordinates",
+            raw_line=line,
+            line_number=line_number,
+        )
+
+    if not all(np.isfinite(numeric_vals)):
+        return ParsedRecord(
+            is_error=True,
+            error_message="ERROR: Malformed CSV line - non-finite numerical coordinates (inf/nan)",
             raw_line=line,
             line_number=line_number,
         )

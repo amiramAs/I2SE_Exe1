@@ -17,6 +17,9 @@ from src.error_renderer import make_error_frame
 from src.volume_io import VolumeData
 
 
+MAX_SLICE_DIM = 2048
+
+
 def reslice_plane(
     volume: VolumeData | np.ndarray,
     points: list[np.ndarray],
@@ -45,16 +48,28 @@ def reslice_plane(
         a2 = a.copy()
         is_3pt = True
     elif len(points) == 4:
-        a1 = np.asarray(points[0], dtype=np.float64)
-        a2 = np.asarray(points[1], dtype=np.float64)
-        b = np.asarray(points[2], dtype=np.float64)
-        c = np.asarray(points[3], dtype=np.float64)
+        p0 = np.asarray(points[0], dtype=np.float64)
+        p1 = np.asarray(points[1], dtype=np.float64)
+        p2 = np.asarray(points[2], dtype=np.float64)
+        p3 = np.asarray(points[3], dtype=np.float64)
+        # Lecturer CSV format specifies (a', b, a'', c) = (p0, p1, p2, p3);
+        # also support (a1, a2, b, c) = (p0, p1, p2, p3) if bases (p0->p1) and (p2->p3) are parallel.
+        if are_bases_parallel(p0, p2, p1, p3) and is_isosceles(p0, p2, p1, p3):
+            a1, b, a2, c = p0, p1, p2, p3
+        elif are_bases_parallel(p0, p1, p2, p3) and is_isosceles(p0, p1, p2, p3):
+            a1, a2, b, c = p0, p1, p2, p3
+        else:
+            a1, b, a2, c = p0, p1, p2, p3
         is_3pt = False
     else:
         return make_error_frame("ERROR: Invalid coordinate count - expected 3 or 4 points", last_frame_dims)
 
     # 2. Geometric Validations
     pts_to_check = [a1, a2, b, c] if not is_3pt else [points[0], b, c]
+
+    # Validate finite coordinates
+    if not all(np.all(np.isfinite(p)) for p in pts_to_check):
+        return make_error_frame("ERROR: Non-finite coordinates (inf/nan)", last_frame_dims)
 
     # Collinear check
     if are_collinear(pts_to_check):
@@ -85,6 +100,12 @@ def reslice_plane(
 
     if H <= 0 or W <= 0:
         return make_error_frame("ERROR: Degenerate dimensions - slice height or width is zero", last_frame_dims)
+
+    if H > MAX_SLICE_DIM or W > MAX_SLICE_DIM:
+        return make_error_frame(
+            f"ERROR: Slice dimensions ({W}x{H}) exceed maximum allowed size ({MAX_SLICE_DIM})",
+            last_frame_dims,
+        )
 
     v_ab = (b - a1) / dab
     v_ac = (c - a2) / dac
