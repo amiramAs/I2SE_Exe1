@@ -24,10 +24,10 @@ The strategy applies two formal specification-based testing techniques:
 | **EP-V4** | Empty Lines in CSV | Empty lines, blank spaces, or newline characters between valid rows. | **Silently skipped**; no frame or error is generated; process continues to next row. |
 | **EP-I1** | Malformed CSV (Non-numeric) | CSV row containing non-numeric strings or unparseable tokens. | Black error frame with dimensions of the last valid frame, labeled with error message. |
 | **EP-I2** | Invalid Point / Token Count | Row starting with $N \notin \{3, 4\}$, or total tokens $\neq 1 + 3N$ (e.g. 7, 10, or 15 values). | Black error frame with dimensions of the last valid frame, labeled with error message. |
-| **EP-I3** | Degenerate / Coincident Points | Points with distance $< \epsilon$ ($D_{ab} = 0$ or $D_{bc} = 0$). | Black error frame with dimensions of the last valid frame, labeled with error message. |
-| **EP-I4** | Collinear Vertices | Vertices all lying on a single straight line in 3D space. | Black error frame with dimensions of the last valid frame, labeled with error message. |
-| **EP-I5** | Non-Isosceles Geometry | Shape where lateral leg lengths differ ($|D_{ab} - D_{ac}| > \epsilon$). | Black error frame with dimensions of the last valid frame, labeled with error message. |
-| **EP-I6** | Non-Parallel Trapezoid Bases | 4-point shape where top base vector is not parallel to bottom base vector. | Black error frame with dimensions of the last valid frame, labeled with error message. |
+| **EP-I3** | Degenerate / Coincident Points | Points with distance $< \text{EPS}$ ($\text{EPS} = 0.001$, $D_{ab} < 0.001$ or $D_{bc} < 0.001$). | Black error frame with dimensions of the last valid frame, labeled with error message. |
+| **EP-I4** | Collinear Vertices | Vertices all lying on a single straight line in 3D space (cross product norm $\le \text{EPS} = 0.001$). | Black error frame with dimensions of the last valid frame, labeled with error message. |
+| **EP-I5** | Non-Isosceles Geometry | Shape where lateral leg lengths differ beyond tolerance ($|D_{ab} - D_{ac}| > \text{EPS} = 0.001$). | Black error frame with dimensions of the last valid frame, labeled with error message. |
+| **EP-I6** | Non-Parallel Trapezoid Bases | 4-point shape where top base vector is not parallel to bottom base vector ($\|\hat{u}_{\text{top}} \times \hat{u}_{\text{bot}}\| > \text{EPS} = 0.001$). | Black error frame with dimensions of the last valid frame, labeled with error message. |
 | **EP-I7** | First-Frame Error Fallback | An error occurring on the very first record of the CSV file. | Black error frame with default dimensions $500 \times 500$, labeled with error message. |
 
 ---
@@ -43,8 +43,11 @@ The strategy applies two formal specification-based testing techniques:
 3. **Volume Clamping Boundaries**:
    * **Test**: Sampling at exact coordinates $p = 0.0$ vs $p = -0.01$, and $p = \text{dim} - 1.0$ vs $p = \text{dim} + 0.01$.
    * **Verification**: Discrete integer rounding maps continuous coordinates to boundary indices safely, switching to zero-padding immediately outside limits.
-4. **Distance Threshold ($\epsilon$)**:
-   * **Test**: Shapes where $|D_{ab} - D_{ac}| = \epsilon$ (accepted) vs $|D_{ab} - D_{ac}| = \epsilon + 0.001$ (rejected).
+4. **Distance & Geometric Tolerance Threshold ($\text{EPS} = 0.001$)**:
+   * **Test**: Shapes where $|D_{ab} - D_{ac}| \le \text{EPS}$ ($\text{EPS} = 0.001$, accepted as valid isosceles) vs $|D_{ab} - D_{ac}| > \text{EPS}$ (rejected as non-isosceles).
+5. **Throughput & Latency Performance Boundary ($\ge 100\text{ FPS}$)**:
+   * **Test**: Slicing oblique planes across a full-scale $500 \times 500 \times 500$ 3D volume.
+   * **Verification**: Average rendering rate must meet or exceed $100\text{ FPS}$ ($\le 10\text{ ms}$ per frame).
 
 ---
 
@@ -58,12 +61,14 @@ The strategy applies two formal specification-based testing techniques:
 | **TC-04** | EP-V4 | Valid row followed by `\n` (empty line) and another valid row | Exactly 2 video frames generated; empty row skipped without error. |
 | **TC-05** | EP-I1 | `"3, 10, 20, foo, 40, 50, 60, 70, 80, 90"` | Black frame, shape matching previous frame, text: `"ERROR: Malformed CSV line..."`. |
 | **TC-06** | EP-I2 | `"5, 1, 2, 3, 4, 5, 6, 7"` (Invalid point count 5 and 8 values) | Black frame, shape matching previous frame, text: `"ERROR: Invalid CSV format..."`. |
-| **TC-07** | EP-I3 | `3, 5,5,5, 5,5,5, 10,10,10` ($a=b \implies D_{ab}=0$) | Black frame, shape matching previous frame, text: `"ERROR: Degenerate geometry..."`. |
+| **TC-07** | EP-I3 | `3, 5,5,5, 5,5,5, 10,10,10` ($a=b \implies D_{ab}=0 < \text{EPS}$) | Black frame, shape matching previous frame, text: `"ERROR: Degenerate geometry..."`. |
 | **TC-08** | EP-I4 | `3, 0,0,0, 5,5,5, 10,10,10` (Collinear points) | Black frame, shape matching previous frame, text: `"ERROR: Collinear vertices..."`. |
-| **TC-09** | EP-I5 | `3, 0,0,0, 0,10,0, 15,20,0` ($D_{ab} \neq D_{ac}$) | Black frame, shape matching previous frame, text: `"ERROR: Non-isosceles geometry..."`. |
+| **TC-09** | EP-I5 | `3, 0,0,0, 0,10,0, 15,20,0` ($|D_{ab} - D_{ac}| > \text{EPS}$) | Black frame, shape matching previous frame, text: `"ERROR: Non-isosceles geometry..."`. |
 | **TC-10** | EP-I6 | `4, 0,0,0, 5,0,0, 0,10,0, 5,15,0` (Non-parallel bases) | Black frame, shape matching previous frame, text: `"ERROR: Non-parallel trapezoid bases..."`. |
 | **TC-11** | EP-I7 | First CSV row has malformed text (no prior frame exists) | Error frame generated with dimensions exactly $(500, 500)$. |
 | **TC-12** | BVA | Continuous coordinates with decimal fractions (e.g. `12.6, 44.4`) | Correct nearest-integer rounding, no index out of bounds ($0 \le x < W$). |
+| **TC-13** | BVA (`EPS`) | Isosceles leg difference within $\text{EPS} = 0.001$ vs exceeding $\text{EPS} = 0.001$ | Accepted (`True`) when $|D_{ab} - D_{ac}| \le 0.001$; rejected (`False`) when $> 0.001$. |
+| **TC-14** | Performance | Rendering 30 oblique slices ($559 \times 500$) across a $500 \times 500 \times 500$ volume | Measured throughput $\ge 100\text{ FPS}$ ($\le 10\text{ ms}$ per frame). |
 
 ---
 
@@ -95,7 +100,7 @@ python Ex0.py <file.nrrd> <file.csv> <file.mp4>
 ## 6. Test Execution & Reporting
 
 All test cases are implemented using the `pytest` automated framework:
-* **Engine Tests**: `tests/test_reslicing_blackbox.py` (Fast, in-memory synthetic volumes for TC-01 to TC-12).
+* **Engine Tests**: `tests/test_reslicing_blackbox.py` (Fast, in-memory synthetic volumes and $500^3$ performance benchmarks for TC-01 to TC-14).
 * **CLI Demo Tests**: `tests/test_demo_cli.py` (Subprocess invocations testing `Ex0.py` for TC-CLI-01 to TC-CLI-06).
 * All tests run in continuous integration without requiring GUI display or interactive user intervention.
 

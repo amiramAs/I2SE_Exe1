@@ -5,7 +5,8 @@ from __future__ import annotations
 import numpy as np
 
 
-EPSILON = 1e-3
+EPS = 0.001
+EPSILON = EPS
 
 
 def dist(p1: np.ndarray, p2: np.ndarray) -> float:
@@ -18,12 +19,12 @@ def unit_vector(p_from: np.ndarray, p_to: np.ndarray, length: float | None = Non
     diff = np.asarray(p_to, dtype=np.float64) - np.asarray(p_from, dtype=np.float64)
     if length is None:
         length = float(np.linalg.norm(diff))
-    if length < 1e-9:
+    if length < EPS:
         return np.zeros(3, dtype=np.float64)
     return diff / length
 
 
-def are_collinear(points: list[np.ndarray], eps: float = EPSILON) -> bool:
+def are_collinear(points: list[np.ndarray], eps: float = EPS) -> bool:
     """
     Checks if 3 or 4 points lie along a single linear segment.
     """
@@ -52,17 +53,17 @@ def are_collinear(points: list[np.ndarray], eps: float = EPSILON) -> bool:
     return True
 
 
-def is_isosceles(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndarray, is_3pt: bool = False, eps: float = 0.5) -> bool:
+def is_isosceles(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndarray, is_3pt: bool = False, eps: float = EPS) -> bool:
     """
-    Validates if leg lengths are equal within tolerance:
-    dist(a1, b) == dist(a2, c)
+    Validates if leg lengths are equal within tolerance EPS = 0.001:
+    |dist(a1, b) - dist(a2, c)| <= eps
     """
     dab = dist(a1, b)
     dac = dist(a2, c)
     return abs(dab - dac) <= eps
 
 
-def are_bases_parallel(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndarray, eps: float = 0.05) -> bool:
+def are_bases_parallel(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndarray, eps: float = EPS) -> bool:
     """
     For 4-point trapezoids, checks if top base (a1 -> a2) is parallel to bottom base (b -> c).
     """
@@ -72,7 +73,7 @@ def are_bases_parallel(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndar
     norm_top = np.linalg.norm(v_top)
     norm_bot = np.linalg.norm(v_bot)
 
-    if norm_top < 1e-7 or norm_bot < 1e-7:
+    if norm_top < eps or norm_bot < eps:
         return False
 
     u_top = v_top / norm_top
@@ -86,9 +87,9 @@ def are_bases_parallel(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndar
     return bool(is_parallel and same_direction)
 
 
-def are_coplanar(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndarray, eps: float = 1.0) -> bool:
+def are_coplanar(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndarray, eps: float = EPS) -> bool:
     """
-    Checks if 4 points lie on the same 2D plane in R^3 using scalar triple product.
+    Checks if 4 points lie on the same 2D plane in R^3 using normalized scalar triple product.
     """
     p1 = np.asarray(a1, dtype=np.float64)
     p2 = np.asarray(a2, dtype=np.float64)
@@ -99,5 +100,9 @@ def are_coplanar(a1: np.ndarray, a2: np.ndarray, b: np.ndarray, c: np.ndarray, e
     v2 = p3 - p1
     v3 = p4 - p1
 
-    volume = abs(float(np.dot(np.cross(v1, v2), v3)))
+    n1, n2, n3 = np.linalg.norm(v1), np.linalg.norm(v2), np.linalg.norm(v3)
+    if n1 < eps or n2 < eps or n3 < eps:
+        return True
+
+    volume = abs(float(np.dot(np.cross(v1 / n1, v2 / n2), v3 / n3)))
     return volume <= eps

@@ -2,14 +2,21 @@
 Black-Box automated test suite for the Planar Reslicing Engine.
 Tests are based strictly on the specification in docs/testing_strategy.md.
 """
+import os
+import sys
 import pytest
 import numpy as np
 
-from src.geometry import are_collinear, is_isosceles, are_bases_parallel
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from src.geometry import EPS, are_collinear, is_isosceles, are_bases_parallel
 from src.csv_parser import parse_csv_line
 from src.reslicer import reslice_plane
 from src.volume_io import VolumeData
 from src.error_renderer import make_error_frame
+
+
+assert EPS == 0.001
 
 
 @pytest.fixture
@@ -166,3 +173,36 @@ def test_tc12_decimal_coordinates_and_bounds_rounding(synthetic_volume):
     frame = reslice_plane(synthetic_volume, [a, b, c])
     assert frame.ndim == 2
     assert frame.shape[0] == int(round(np.linalg.norm(b - a)))
+
+
+def test_tc13_epsilon_tolerance_bva():
+    """BVA: Verify EPS = 0.001 boundary tolerance for isosceles leg comparison."""
+    a = np.array([0.0, 0.0, 0.0])
+    b = np.array([10.0, 0.0, 0.0])
+    # Within EPS = 0.001 -> valid isosceles
+    c_valid = np.array([0.0, 10.0 + EPS * 0.9, 0.0])
+    assert is_isosceles(a, a, b, c_valid, eps=EPS) is True
+
+    # Exceeding EPS = 0.001 -> rejected
+    c_invalid = np.array([0.0, 10.0 + EPS * 1.5, 0.0])
+    assert is_isosceles(a, a, b, c_invalid, eps=EPS) is False
+
+
+def test_tc14_performance_benchmark_100fps():
+    """SRS Performance Requirement: Core reslicing algorithm must run at >= 100 FPS (<= 10 ms/frame) on 500^3 volume."""
+    import time
+    vol_500 = VolumeData(np.zeros((500, 500, 500), dtype=np.uint8))
+    a = np.array([250.0, 250.0, 0.0])
+    b = np.array([0.0, 250.0, 500.0])
+    c = np.array([500.0, 250.0, 500.0])
+
+    # Warm-up call
+    reslice_plane(vol_500, [a, b, c])
+
+    num_frames = 30
+    t_start = time.perf_counter()
+    for _ in range(num_frames):
+        reslice_plane(vol_500, [a, b, c])
+    elapsed = time.perf_counter() - t_start
+    fps = num_frames / elapsed
+    assert fps >= 100.0, f"Expected >= 100 FPS on 500^3 volume, got {fps:.1f} FPS"
