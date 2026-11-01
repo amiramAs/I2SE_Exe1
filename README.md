@@ -39,6 +39,9 @@ The application addresses the problem of reconstructing a continuous sequence of
 3. **Discrete Coordinate Sampling**: Mapping every discrete pixel $(u, v)$ on the target 2D image grid back to its continuous 3D source coordinate $(x, y, z)$ within the volume using vector basis normalization, directional basis vectors, and interpolation.
 4. **Boundary & Out-of-Bounds Handling**: Properly evaluating target planar points that lie partially or entirely outside the volume boundaries (e.g., negative coordinates or coordinates exceeding grid limits) by defaulting to background zero values without performance degradation or system exceptions.
 
+> [!TIP]
+> For the complete mathematical formulation, scanline centering derivation, geometric constraints, and pseudo-code, see the detailed [Planar Reslicing Algorithm Specification](docs/algorithm_explanation.md).
+
 ---
 
 ## 2. Project Scope
@@ -116,6 +119,7 @@ I2SE_Exe1/
 │   ├── onion.nrrd                           # 3D micro-CT scan of an onion
 │   └── car.nrrd                             # Synthetic 3D vehicle dataset
 ├── docs/                                    # Technical documentation & specifications
+│   ├── algorithm_explanation.md             # Mathematical algorithm specification & pseudo-code
 │   └── software_requirements_specification_srs.md  # Formal SRS document
 ├── README.md                                # Project overview, problem description, & scope
 ```
@@ -124,4 +128,5 @@ I2SE_Exe1/
 
 ## 6. Specification & Requirements Reference
 
-For exhaustive functional criteria, edge case handling, and non-functional requirements, refer to the complete [Software Requirements Specification (SRS)](docs/software_requirements_specification_srs.md).
+* **Algorithm Specification**: Detailed mathematical formulation, scanline centering logic, exception validation, and pseudo-code can be found in the [Planar Reslicing Algorithm Specification](docs/algorithm_explanation.md).
+* **Software Requirements**: Exhaustive functional criteria, non-functional latency/throughput benchmarks, and architectural design are detailed in the [Software Requirements Specification (SRS)](docs/software_requirements_specification_srs.md).
