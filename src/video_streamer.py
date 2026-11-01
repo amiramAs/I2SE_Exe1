@@ -39,14 +39,18 @@ def pad_to_dimension(frame: np.ndarray, target_h: int, target_w: int) -> np.ndar
 def export_frames_to_mp4(
     frames: list[np.ndarray],
     output_path: str,
-    fps: int = 10,
+    fps: float = 10.0,
+    frame_duration: float = 0.1,
 ) -> None:
     """
     Encodes a list of 2D numpy arrays into an MP4 video file using direct stdin streaming.
+    By default, each frame is displayed for 0.1 seconds (10 FPS).
     Ensures zero intermediate disk I/O.
     """
     if not frames:
         raise ValueError("Cannot export empty frame list to MP4")
+
+    effective_fps = (1.0 / frame_duration) if frame_duration > 0 else fps
 
     # Determine uniform target dimensions (max width and max height across frames)
     # Ensure dimensions are even numbers (required by H.264 yuv420p)
@@ -59,6 +63,7 @@ def export_frames_to_mp4(
     ffmpeg_bin = get_ffmpeg_executable()
 
     # ffmpeg command: read raw 8-bit grayscale from stdin, output H.264 MP4
+    # -framerate sets each input frame duration to 0.1s (10 FPS)
     cmd = [
         ffmpeg_bin,
         "-y",
@@ -66,8 +71,9 @@ def export_frames_to_mp4(
         "-vcodec", "rawvideo",
         "-s", f"{target_w}x{target_h}",
         "-pix_fmt", "gray",
-        "-r", str(fps),
+        "-framerate", str(effective_fps),
         "-i", "-",  # Read from stdin
+        "-r", str(effective_fps),
         "-c:v", "libx264",
         "-pix_fmt", "yuv420p",
         "-preset", "ultrafast",

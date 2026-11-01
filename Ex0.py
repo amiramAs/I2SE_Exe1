@@ -5,6 +5,7 @@ Usage: python Ex0.py <file.nrrd> <file.csv> <file.mp4>
 from __future__ import annotations
 import sys
 import os
+import time
 import numpy as np
 
 from src.volume_io import VolumeData
@@ -52,6 +53,7 @@ def main() -> int:
     frames: list[np.ndarray] = []
     last_valid_dims: tuple[int, int] = (500, 500)
 
+    t_start = time.perf_counter()
     for idx, rec in enumerate(records, start=1):
         if rec.is_error:
             print(f"  Frame {idx}: Handling CSV error '{rec.error_message}'")
@@ -68,6 +70,10 @@ def main() -> int:
             last_valid_dims = (frame.shape[0], frame.shape[1])
 
         frames.append(frame)
+
+    elapsed = time.perf_counter() - t_start
+    render_fps = len(frames) / elapsed if elapsed > 0 else 0.0
+    print(f"Rendered {len(frames)} frames in {elapsed:.4f}s ({render_fps:.1f} FPS).")
 
     if not frames:
         print("WARNING: No valid frames generated.", file=sys.stderr)

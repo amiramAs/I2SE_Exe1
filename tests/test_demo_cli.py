@@ -17,6 +17,7 @@ def test_cli_01_full_e2e_run(tmp_path):
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     assert result.returncode == 0
+    assert "FPS" in result.stdout
     assert os.path.exists(output_mp4)
     assert os.path.getsize(output_mp4) > 1000  # Non-trivial MP4 file size
 
