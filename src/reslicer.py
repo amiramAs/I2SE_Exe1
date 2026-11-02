@@ -24,6 +24,7 @@ def reslice_plane(
     volume: VolumeData | np.ndarray,
     points: list[np.ndarray],
     last_frame_dims: tuple[int, int] = (500, 500),
+    error_out: list[str] | None = None,
 ) -> np.ndarray:
     """
     Extracts a 2D cross-sectional planar frame from a 3D volume.
@@ -32,10 +33,16 @@ def reslice_plane(
         volume: VolumeData or 3D numpy array.
         points: List of 3 or 4 points in R^3.
         last_frame_dims: Tuple of (height, width) of the last valid frame.
+        error_out: Optional list populated with the error string if validation fails.
 
     Returns:
         np.ndarray: 2D array of shape (height, width) representing the sliced image.
     """
+    def _fail(msg: str) -> np.ndarray:
+        if error_out is not None:
+            error_out.append(msg)
+        return make_error_frame(msg, last_frame_dims)
+
     vol_array = volume.array if isinstance(volume, VolumeData) else np.asarray(volume)
     dx, dy, dz = vol_array.shape
 
@@ -62,18 +69,18 @@ def reslice_plane(
             a1, b, a2, c = p0, p1, p2, p3
         is_3pt = False
     else:
-        return make_error_frame("ERROR: Invalid coordinate count - expected 3 or 4 points", last_frame_dims)
+        return _fail("ERROR: Invalid coordinate count - expected 3 or 4 points")
 
     # 2. Geometric Validations
     pts_to_check = [a1, a2, b, c] if not is_3pt else [points[0], b, c]
 
     # Validate finite coordinates
     if not all(np.all(np.isfinite(p)) for p in pts_to_check):
-        return make_error_frame("ERROR: Non-finite coordinates (inf/nan)", last_frame_dims)
+        return _fail("ERROR: Non-finite coordinates (inf/nan)")
 
     # Collinear check
     if are_collinear(pts_to_check):
-        return make_error_frame("ERROR: Collinear vertices - cannot construct a 2D slicing plane", last_frame_dims)
+        return _fail("ERROR: Collinear vertices - cannot construct a 2D slicing plane")
 
     dab = dist(a1, b)
     dac = dist(a2, c)
@@ -81,31 +88,28 @@ def reslice_plane(
 
     # Degenerate distance check (division by zero prevention)
     if dab < EPS or dbc < EPS:
-        return make_error_frame("ERROR: Degenerate geometry - zero distance between vertices", last_frame_dims)
+        return _fail("ERROR: Degenerate geometry - zero distance between vertices")
 
     # Isosceles check
     if not is_isosceles(a1, a2, b, c, is_3pt=is_3pt):
-        return make_error_frame("ERROR: Non-isosceles geometry - leg lengths must be equal", last_frame_dims)
+        return _fail("ERROR: Non-isosceles geometry - leg lengths must be equal")
 
     # For 4 points, check parallel bases and coplanarity
     if not is_3pt:
         if not are_bases_parallel(a1, a2, b, c):
-            return make_error_frame("ERROR: Non-parallel trapezoid bases - top and bottom must be parallel", last_frame_dims)
+            return _fail("ERROR: Non-parallel trapezoid bases - top and bottom must be parallel")
         if not are_coplanar(a1, a2, b, c):
-            return make_error_frame("ERROR: Non-coplanar points in 4-point geometry", last_frame_dims)
+            return _fail("ERROR: Non-coplanar points in 4-point geometry")
 
     # 3. Canvas Dimensions & Vector Initialization
     H = int(round(dab))
     W = int(round(dbc))
 
     if H <= 0 or W <= 0:
-        return make_error_frame("ERROR: Degenerate dimensions - slice height or width is zero", last_frame_dims)
+        return _fail("ERROR: Degenerate dimensions - slice height or width is zero")
 
     if H > MAX_SLICE_DIM or W > MAX_SLICE_DIM:
-        return make_error_frame(
-            f"ERROR: Slice dimensions ({W}x{H}) exceed maximum allowed size ({MAX_SLICE_DIM})",
-            last_frame_dims,
-        )
+        return _fail(f"ERROR: Slice dimensions ({W}x{H}) exceed maximum allowed size ({MAX_SLICE_DIM})")
 
     v_ab = (b - a1) / dab
     v_ac = (c - a2) / dac

@@ -364,8 +364,9 @@ class ReslicerGUI:
                 if rec.is_error:
                     f = make_error_frame(rec.error_message or "ERROR", last_dims)
                 else:
-                    f = reslice_plane(self.volume, rec.points, last_frame_dims=last_dims)
-                    if not (f.shape == (500, 500) and np.any(f > 0)):
+                    err_out: list[str] = []
+                    f = reslice_plane(self.volume, rec.points, last_frame_dims=last_dims, error_out=err_out)
+                    if not err_out:
                         last_dims = f.shape
                 rendered_frames.append(f)
             elapsed = time.perf_counter() - t_start

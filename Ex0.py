@@ -56,18 +56,16 @@ def main() -> int:
     t_start = time.perf_counter()
     for idx, rec in enumerate(records, start=1):
         if rec.is_error:
-            print(f"  Frame {idx}: Handling CSV error '{rec.error_message}'")
-            frame = make_error_frame(rec.error_message or "ERROR: Invalid data", last_valid_dims)
+            err_msg = rec.error_message or "ERROR: Invalid data"
+            print(f"  Frame {idx} (line {rec.line_number}): {err_msg}")
+            frame = make_error_frame(err_msg, last_valid_dims)
         else:
-            frame = reslice_plane(volume, rec.points, last_frame_dims=last_valid_dims)
-            # Check if frame returned is an error frame
-            if hasattr(frame, 'dtype') and frame.dtype == np.uint8 and np.all(frame == 0):
-                # Valid blank frame or normal slice
-                pass
-
-        # Update last valid dimensions if this was a successful slice
-        if not rec.is_error and frame.shape != (500, 500):
-            last_valid_dims = (frame.shape[0], frame.shape[1])
+            err_out: list[str] = []
+            frame = reslice_plane(volume, rec.points, last_frame_dims=last_valid_dims, error_out=err_out)
+            if err_out:
+                print(f"  Frame {idx} (line {rec.line_number}): {err_out[0]}")
+            else:
+                last_valid_dims = (frame.shape[0], frame.shape[1])
 
         frames.append(frame)
 

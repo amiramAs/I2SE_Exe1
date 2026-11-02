@@ -92,7 +92,6 @@ flowchart LR
 │   ├── NRRD Parser & Contiguous Memory Manager
 │   ├── CSV Geometry Trajectory Parser
 │   └── Plane Reslicing Engine (Isosceles Triangle & Trapezoid Solvers)
-```
 │
 └── Export & Output Layer
     ├── Raw Frame Aggregator
@@ -136,11 +135,21 @@ python main.py
 
 ```plaintext
 I2SE_Exe1/
-├── data/                                    # Sample datasets and volumetric inputs
+├── data/                                    # Sample datasets (.nrrd) and trajectory definitions (.csv)
 │   ├── MRHead_1.nrrd                        # 3D MRI scan of human head
+│   ├── head.csv                             # Trajectory coordinate definitions for MRHead_1
 │   ├── onion.nrrd                           # 3D micro-CT scan of an onion
+│   ├── onion.csv                            # Trajectory coordinate definitions for onion
+│   ├── biscuit_cake.nrrd                    # 3D scan of a biscuit cake
+│   ├── biscuit_cake.csv                     # Trajectory coordinate definitions for biscuit cake
+│   ├── croissant.nrrd                       # 3D scan of a croissant
+│   ├── croissant.csv                        # Trajectory coordinate definitions for croissant
+│   ├── swiss_roll.nrrd                      # 3D scan of a swiss roll
+│   ├── swiss_roll.csv                       # Trajectory coordinate definitions for swiss roll
 │   ├── car.nrrd                             # Synthetic 3D vehicle dataset
-│   └── sample_trajectory.csv                # Lecturer trajectory definitions
+│   ├── lecturer_example.csv                 # Lecturer example trajectory definitions
+│   ├── sample_trajectory.csv                # Sample trajectory definitions
+│   └── edge_cases.csv                       # Edge-case and invalid geometry test trajectories
 ├── docs/                                    # Technical documentation & specifications
 │   ├── algorithm_explanation.md             # Mathematical algorithm specification & pseudo-code
 │   ├── software_requirements_specification_srs.md  # Formal SRS document
@@ -157,8 +166,11 @@ I2SE_Exe1/
 ├── tests/                                   # Automated test suite (pytest)
 │   ├── test_reslicing_blackbox.py           # 12 specification-based blackbox test cases
 │   └── test_demo_cli.py                     # 5 End-to-End CLI demo verification tests
+├── video_output/                            # Generated MP4 video outputs from GUI/CLI
+│   └── test.mp4                             # Sample generated video output
 ├── Ex0.py                                   # Executable CLI demo (python Ex0.py <nrrd> <csv> <mp4>)
 ├── main.py                                  # Desktop GUI launcher (python main.py)
+├── output_demo.mp4                          # Default CLI demo output video
 └── README.md                                # Project overview, problem description, & scope
 ```
 
@@ -169,4 +181,9 @@ I2SE_Exe1/
 * **Algorithm Specification**: Detailed mathematical formulation, scanline centering logic, exception validation, and pseudo-code can be found in the [Planar Reslicing Algorithm Specification](docs/algorithm_explanation.md).
 * **Testing Strategy**: Equivalence partitioning, boundary value analysis, and black-box verification test cases are detailed in the [Black-Box Testing Strategy](docs/testing_strategy.md).
 * **Software Requirements**: Exhaustive functional criteria, non-functional latency/throughput benchmarks, and architectural design are detailed in the [Software Requirements Specification (SRS)](docs/software_requirements_specification_srs.md).
+
+---
+
+*This software was developed in collaboration with **Antigravity** (Google DeepMind).*
+
 
