@@ -2,6 +2,8 @@
 
 A high-performance Python desktop application for extracting, projecting, and rendering 2D image slices from 3D volumetric discrete grid data (`.nrrd`), guided by dynamic geometric spatial coordinates defined in external CSV files.
 
+📺 **[Watch the Project Demo on YouTube](https://youtu.be/6RqctqjyP-c)**
+
 ---
 
 ## 1. Problem Statement
@@ -116,6 +118,10 @@ To launch the interactive GUI viewer with keyboard navigation (`Left` / `Right` 
 ```bash
 python main.py
 ```
+
+### 4.3 Video Demo
+A walkthrough and demonstration of the project in action is available on YouTube:
+* [3D to 2D Volumetric Reslicing Engine - Project Demo](https://youtu.be/6RqctqjyP-c)
 
 ---
 
